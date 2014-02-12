@@ -1,0 +1,74 @@
+Vagrant is a popular and useful program to help people create and manage VMs for dev, test, and sandbox purposes. This short document details steps needed to set up a Drupal dev VM based on Vagrant base box Precise64.
+
+Prerequisite:
+1. Vagrant installed on your host machine. For directions on how to set up Vagrant, go to <a href="http://downloads.vagrantup.com/">this url</a>;
+2. Install and set up VirtualBox. For directions, go to <a href="https://www.virtualbox.org/wiki/Downloads">this url</a>;
+3. Create a base box for vagrant. This will serve as a base to create your own VMs. I choose to use precise64, which I think is good base
+vagrant box add base http://files.vagrantup.com/precise64.box
+4. cd ~
+5. mkdir drupal
+6. cd drupal
+7. vagrant init
+8. Edit and save the file called Vagrant. Specifically, you need to do the following 2 things:
+a. Edit the line that has the "config.vm.box = ", and put:
+"precise64"
+after the equal sign. As of this writing, that is line 10 in Vagrant file.
+b. Uncomment the line that has "config.vm.network :forwarded_port: 80". As of this writing, it is line 19.
+
+Now run the VM by running:
+vagrant up
+
+Once the VM is up, go there by running
+vagrant ssh
+
+VM setup for Drupal development. All commands below are supposed to be run on the VM.
+sudo apt-get update
+sudo apt-get install git
+sudo apt-get install vim
+sudo apt-get install apache2
+git clone --branch 8.x http://git.drupal.org/project/drupal.git
+sudo apt-get install php5
+sudo apt-get install php5-gd
+sudo apt-get install php5-mysql
+sudo apt-get install mysql-server
+sudo a2enmod userdir
+sudo /etc/init.d/apache2 restart
+mkdir ~/public_html
+Edit /etc/apache2/sites-available/default file and add the following section after the section for /var/www/
+
+        <Directory /home/*/public_html/>
+                Options Indexes FollowSymLinks MultiViews
+                AllowOverride None
+                Order allow,deny
+                allow from all
+        </Directory>
+Edit /etc/apache2/mods-available/php5.conf and comment out this section so it looks like this:
+    # To re-enable php in user directories comment the following lines
+    # (from <IfModule ...> to </IfModule>.) Do NOT set it to On as it
+    # prevents .htaccess files from disabling it.
+#    <IfModule mod_userdir.c>
+#        <Directory /home/*/public_html>
+#            php_admin_value engine Off
+#        </Directory>
+#    </IfModule>
+
+mv ~/drupal/ ~/public_html/
+sudo chgrp -R www-data ~/public_html/
+sudo service apache2 restart
+
+Now go to:
+http://localhost:8080/~vagrant/drupal/
+
+At this point, the only problem I have is:
+
+The settings file does not exist.
+The Drupal installer requires that you create a settings file as part of the installation process. Copy the ./sites/default/default.settings.php file to ./sites/default/settings.php. More details about installing Drupal are available in INSTALL.txt.
+
+cp ~/public_html/drupal/sites/default/default.settings.php ~/public_html/drupal/sites/default/settings.php
+
+sudo chgrp -R www-data ~/public_html/
+
+so I followed the instruction above and created the settings.php file. And did:
+http://localhost:8080/~vagrant/drupal/
+
+I was then able to config and get Drupal running!
